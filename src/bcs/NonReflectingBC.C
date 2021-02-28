@@ -56,6 +56,10 @@ NonReflectingBC::commonParameters()
       "p_wave_speed", "p_wave_speed>0.0", "P-wave speed of the material.");
   params.addRequiredRangeCheckedParam<Real>(
       "shear_wave_speed", "shear_wave_speed>0.0", "shear wave speed of the material.");
+  params.addParam<FunctionName>("density_function", "1", "A function that describes the density.");
+  params.addParam<FunctionName>("p_wave_function", "1", "A function that describes the S-wave speed.");
+  params.addParam<FunctionName>("s_wave_function", "1", "A function that describes the P wave speed.");
+  
   return params;
 }
 
@@ -73,7 +77,10 @@ NonReflectingBC::NonReflectingBC(const InputParameters & parameters)
     _alpha(getParam<Real>("alpha")),
     _density(getParam<Real>("density")),
     _p_wave_speed(getParam<Real>("p_wave_speed")),
-    _shear_wave_speed(getParam<Real>("shear_wave_speed"))
+    _shear_wave_speed(getParam<Real>("shear_wave_speed")),
+    _density_function(getFunction("density_function")),
+    _p_wave_function(getFunction("p_wave_function")),
+    _shear_wave_function(getFunction("s_wave_function"))
 {
 
   // Error checking on variable vectors
@@ -125,18 +132,18 @@ NonReflectingBC::computeQpResidual()
   }
   // residual is test[i][_qp] *( density* V_p * normal component of velocity +
   // density * V_s* tangential component of velocity)
-  return _test[_i][_qp] * _density *
-         (_p_wave_speed * normal_vel * _normals[_qp](_component) +
-          _shear_wave_speed * (vel[_component] - normal_vel * _normals[_qp](_component)));
+  return _test[_i][_qp] * _density * _density_function.value(_t, _q_point[_qp]) *
+         (_p_wave_speed * _p_wave_function.value(_t, _q_point[_qp]) * normal_vel * _normals[_qp](_component) +
+          _shear_wave_speed * _shear_wave_function.value(_t, _q_point[_qp])* (vel[_component] - normal_vel * _normals[_qp](_component)));
 }
 
 Real
 NonReflectingBC::computeQpJacobian()
 {
-  return _test[_i][_qp] * _density *
-         ((_p_wave_speed - _shear_wave_speed) * _normals[_qp](_component) *
+  return _test[_i][_qp] * _density * _density_function.value(_t, _q_point[_qp]) *
+         ((_p_wave_speed * _p_wave_function.value(_t, _q_point[_qp]) - _shear_wave_speed * _shear_wave_function.value(_t, _q_point[_qp])) * _normals[_qp](_component) *
               _normals[_qp](_component) +
-          _shear_wave_speed) *
+          _shear_wave_speed * _shear_wave_function.value(_t, _q_point[_qp])) *
          (1. + _alpha) * _gamma / _beta / _dt * _phi[_j][_qp];
 }
 
@@ -154,7 +161,7 @@ NonReflectingBC::computeQpOffDiagJacobian(unsigned int jvar)
     }
 
   if (active)
-    return _test[_i][_qp] * _density * (_p_wave_speed - _shear_wave_speed) *
+    return _test[_i][_qp] * _density * _density_function.value(_t, _q_point[_qp]) * (_p_wave_speed * _p_wave_function.value(_t, _q_point[_qp]) - _shear_wave_speed *_shear_wave_function.value(_t, _q_point[_qp])) *
            _normals[_qp](_component) * _normals[_qp](coupled_component) * (1. + _alpha) * _gamma /
            _beta / _dt * _phi[_j][_qp];
 

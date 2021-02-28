@@ -16,7 +16,7 @@
 
 #include "IntegratedBC.h"
 
-
+class Function;
 
 /**
  * NonReflecting BC applies a Lysmer damper on a given boundary in the normal
@@ -77,6 +77,15 @@ protected:
 
   /// Shear wave speed of the soil
   const Real & _shear_wave_speed;
+  
+  /// Density function
+  const Function & _density_function;
+  
+  /// P wave function
+  const Function & _p_wave_function;
+  
+  /// S wave function
+  const Function & _shear_wave_function;
 };
 
 #endif // NONREFLECTINGBC_H

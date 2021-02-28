@@ -164,6 +164,7 @@
       shear_wave_speed = 10.0
       p_wave_speed = 16.329931618554521
       density = 1.0
+      density_function = density_function
     [../]
   [../]
   [./Periodic]
@@ -226,6 +227,10 @@
   [./layers]
     type = ConstantFunction
     value = 10
+  [../]
+  [./density_function]
+    type = ConstantFunction
+    value = 1
   [../]
 []
 
